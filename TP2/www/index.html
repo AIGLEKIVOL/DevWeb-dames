@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu de Dames</title>
+    <style>
+        /* Styles pour le plateau */
+        #plateau {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-top: 50px; /* Espacement au-dessus du plateau */
+        }
+        /* Optionnel : ajouter des styles pour les lignes du plateau */
+        #plateau > div {
+            display: flex; /* Alignement horizontal des cases */
+        }
+    </style>
+</head>
+<body>
+    <h1>Plateau de jeu de Dames</h1>
+
+    <!-- Conteneur du plateau de jeu -->
+    <div id="plateau"></div>
+
+    <!-- Lien vers ton script JS -->
+    <script src="js/plateau.js"></script>
+
+    <div id="login"></div>
+</body>
+</html>
