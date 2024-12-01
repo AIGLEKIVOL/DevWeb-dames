@@ -25,9 +25,22 @@
     <!-- Conteneur du plateau de jeu -->
     <div id="plateau"></div>
 
-    <!-- Lien vers ton script JS -->
+
+    <!-- Lien vers le script JS -->
     <script src="js/plateau.js"></script>
 
-    <div id="login"></div>
+    <div id="login-popup" class="popup">
+        <form id="login-form" class="popup-form">
+          <h2>Connexion</h2>
+          <p id="error-message" class="error" style="text-align: center;"> Identifiants incorrects </p>
+          <label for="username">Nom d'utilisateur:</label>
+          <input type="text" id="username" name="username" required />
+          <label for="password">Mot de passe:</label>
+          <input type="password" id="password" name="password" required />
+          <button type="submit">Se connecter</button>
+            <!-- Lien vers le script JS -->
+            <script src="js/login.js"></script>
+        </form>
+      </div>
 </body>
 </html>
