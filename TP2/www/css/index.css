@@ -102,6 +102,29 @@ h1 {
     -webkit-animation:fade 3000ms infinite;
 }
 
+.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none; /* Masqué par défaut */
+}
+
+
+.popup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.error {
+    color: red;
+    font-size: 0.9em;
+}
 
 @media screen and (prefers-color-scheme: dark) {
     body {

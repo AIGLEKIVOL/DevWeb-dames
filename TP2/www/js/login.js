@@ -6,33 +6,49 @@ document.addEventListener("DOMContentLoaded", () => {
     // Afficher le popup au chargement de la page
     loginPopup.style.display = "block";
   
-    // Gestion de la soumission du formulaire
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-  
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
-  
-      try {
-        const response = await fetch("http://your-server-endpoint/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ username, password }),
-        });
-  
-        if (response.ok) {
-          const data = await response.json();
-          alert(`Bienvenue, ${data.username}!`);
-          loginPopup.style.display = "none"; // Fermer le popup
-        } else {
-          errorMessage.style.display = "block";
-          errorMessage.textContent = "Identifiants incorrects";
-        }
-      } catch (err) {
-        errorMessage.style.display = "block";
-        errorMessage.textContent = "Erreur de connexion au serveur";
-      }
-    });
+     // Initialiser la connexion WebSocket
+  const socket = new WebSocket("ws://localhost:9898");
+
+  socket.onopen = () => {
+    console.log("WebSocket connection established.");
+  };
+
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.type === "login_success") {
+      alert(`Bienvenue, ${data.username}! La partie va commencer.`);
+      loginPopup.style.display = "none"; // Ferme le popup
+      // Lancer la partie ici
+    } else if (data.type === "login_error") {
+      errorMessage.style.display = "block";
+      errorMessage.textContent = data.message;
+    }
+  };
+
+  socket.onerror = (error) => {
+    console.error("WebSocket error:", error);
+  };
+
+  loginForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (!username || !password) {
+      errorMessage.style.display = "block";
+      errorMessage.textContent = "Veuillez remplir tous les champs.";
+      return;
+    }
+
+    // Envoyer les données via WebSocket
+    socket.send(
+      JSON.stringify({
+        type: "login",
+        username,
+        password,
+      })
+    );
   });
+});
