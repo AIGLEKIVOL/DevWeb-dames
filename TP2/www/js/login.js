@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loginPopup.style.display = "block";
   
      // Initialiser la connexion WebSocket
-  const socket = new WebSocket("ws://localhost:9898");
+  const socket = new WebSocket("ws://127.0.0.1:9898/");
 
   socket.onopen = () => {
     console.log("WebSocket connection established.");
