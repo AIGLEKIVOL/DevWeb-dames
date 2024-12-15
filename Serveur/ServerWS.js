@@ -37,9 +37,49 @@ wsServer.on('request', function(request){
     connection.on('open', function(message) {
         console.log('Bienvenue ! Vous êtes connecté');
         });
+        
     connection.on('message', function(message) {
         console.log(message, 'bien reçu');
-        });
+        const raw = JSON.stringify(message)
+        const dataraw = JSON.parse(raw);
+        const data = JSON.parse(dataraw.utf8Data);
+
+        console.log(data.username);
+
+        //if (data.type === "login") {
+          const { username, password } = data;
+    
+          if (users.has(username)) {
+            // Vérifier le mot de passe pour un utilisateur existant
+            if (users.get(username) === password) {
+              connection.send(
+                JSON.stringify({
+                  type: "login_success",
+                  username,
+                })
+              );
+            } else {
+              connection.send(
+                JSON.stringify({
+                  type: "login_error",
+                  message: "Mot de passe incorrect.",
+                })
+              );
+            }
+          } else {
+            // Ajouter un nouvel utilisateur
+            users.set(data.username, data.password);
+            connection.send(
+              JSON.stringify({
+                type: "login_success",
+                username,
+              })
+            );
+          }
+        //};
+        console.log(users);
+
+    });
     connection.on('close', function(reasonCode, description) {
         console.log('perte de connexion')
         // To do
@@ -50,42 +90,7 @@ wsServer.on('request', function(request){
 wsServer.on("connection", (ws) => {
     console.log("Client connected");
   
-    wsServer.on("message", (message) => {
-      const data = JSON.parse(message);
-  
-      if (data.type === "login") {
-        const { username, password } = data;
-  
-        if (users.has(username)) {
-          // Vérifier le mot de passe pour un utilisateur existant
-          if (users.get(username) === password) {
-            ws.send(
-              JSON.stringify({
-                type: "login_success",
-                username,
-              })
-            );
-          } else {
-            ws.send(
-              JSON.stringify({
-                type: "login_error",
-                message: "Mot de passe incorrect.",
-              })
-            );
-          }
-        } else {
-          // Ajouter un nouvel utilisateur
-          users.set(username, password);
-          ws.send(
-            JSON.stringify({
-              type: "login_success",
-              username,
-            })
-          );
-        }
-      }
-    });
-  
+    
     wsServer.on("close", () => {
       console.log("Client disconnected");
     });
