@@ -1,9 +1,9 @@
 function initialiserPlateau() {
     // Fonction pour initialiser un plateau de 8x8 avec alternance des couleurs
     const plateau = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 10; i++) {
         const ligne = [];
-        for (let j = 0; j < 8; j++) {
+        for (let j = 0; j < 10; j++) {
             // Case noire sur les cases impaires et blanches sur les paires
             if ((i + j) % 2 === 0) {
                 ligne.push("blanc");
@@ -49,9 +49,9 @@ function afficherPlateau() {
 
             // Ajouter les pions en SVG sur les cases noires uniquement
             if (caseType === "noir") {
-                if (i < 3) {
+                if (i < 4) {
                     ajouterPionSVG(caseSVG, "black");  // Pions noirs sur les 3 premières lignes
-                } else if (i > 4) {
+                } else if (i > 5) {
                     ajouterPionSVG(caseSVG, "white");  // Pions blancs sur les 3 dernières lignes
                 }
             }
