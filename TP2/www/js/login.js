@@ -17,13 +17,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = JSON.parse(event.data);
 
     if (data.type === "login_success") {
-      alert(`Bienvenue, ${data.username}! La partie va commencer.`);
+      alert(`Bienvenue, ${data.username} ! La partie va commencer.`);
       loginPopup.style.display = "none"; // Ferme le popup
       // Lancer la partie ici
     } else if (data.type === "login_error") {
       errorMessage.style.display = "block";
       errorMessage.textContent = data.message;
     }
+    console.log('Message envoyé:', message);
+
   };
 
   socket.onerror = (error) => {
@@ -35,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value.trim();
-
+    
     if (!username || !password) {
       errorMessage.style.display = "block";
       errorMessage.textContent = "Veuillez remplir tous les champs.";
@@ -46,8 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
     socket.send(
       JSON.stringify({
         type: "login",
-        username,
-        password,
+        username: username,
+        password: password,
       })
     );
   });
