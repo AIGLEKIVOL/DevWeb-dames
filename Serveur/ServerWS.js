@@ -28,6 +28,27 @@ const wsServer = new WebSocketServer({
     httpServer: server
 });
 
+// Joueurs
+const connectedPlayers = [];
+const waitingPlayers = [];
+
+  // // Fonction pour démarrer une partie
+  // const startGame = (player1, player2) => {
+  //   console.log(`Starting game between ${player1.username} and ${player2.username}`);
+  //   player1.connection.send(JSON.stringify({ type: 'game_start', opponent: player2.username }));
+  //   player2.connection.send(JSON.stringify({ type: 'game_start', opponent: player1.username }));
+  //   // Logique de démarrage du jeu ici
+  // };
+
+// On vérifie qu'il y a bien 2 joueurs au moins en file d'attente avant de démarrer les parties
+const checkPlayersStartGames = () => {
+  while (waitingPlayers.length >= 2) {
+      const player1 = waitingPlayers.shift();
+      const player2 = waitingPlayers.shift();
+      startGame(player1, player2);
+  }
+};
+
 //Mise en place des événements WebSockets
 wsServer.on('request', function(request){
     const connection = request.accept(null, request.origin);
@@ -76,32 +97,37 @@ wsServer.on('request', function(request){
               })
             );
           }
-        //};
+
+        // Ajout du joueur à la liste des joueurs connectés et à la file d'attente
+        const player = {username, connection};
+        connectedPlayers.push(player);
+        waitingPlayers.push(player);
+        
+        // Vérifie si on peut démarrer une ou des partie(s)
+        checkPlayersStartGames();
+      
+        //On informe les joeurs quand ils sont dans la file d'attente
+        if (waitingPlayers.includes(player)) {
+            connection.send(JSON.stringify({ 
+              type: 'waiting',
+              message: 'En attente d\'un adversaire'
+            })
+          );
+        }
         console.log(users);
 
     });
     connection.on('close', function(reasonCode, description) {
         console.log('perte de connexion')
-        // To do
+        // code à rajouter
         });
 });
 
 // Authentification
 wsServer.on("connection", (ws) => {
     console.log("Client connected");
-  
     
     wsServer.on("close", () => {
       console.log("Client disconnected");
     });
-  });
-
-  // Liste des joueurs connectés
- const connectedPlayers = [];
-
-  
-  // Liste d'attente des joueurs
-  const waitingPlayers = [];
-
-
-    
+});   
