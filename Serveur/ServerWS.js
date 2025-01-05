@@ -5,8 +5,6 @@ import {server as WebSocketServer} from 'websocket';
 const server = http.createServer();
 //server.listen(9898); // On écoute sur le port 9898
 
-const users = new Map(); //simule une base de données
-
 const MONGO_URI = 'mongodb://127.0.0.1:27017/DameDataBase';
 
 // Connexion MongoDB
