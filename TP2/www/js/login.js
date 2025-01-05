@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
       errorMessage.style.display = "block";
       errorMessage.textContent = data.message;
     }
-    console.log('Message envoyé:', message);
+    console.log('Message envoyé:', data.message);
 
   };
 

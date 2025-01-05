@@ -3,24 +3,39 @@ import http from 'http';
 import {server as WebSocketServer} from 'websocket';
 
 const server = http.createServer();
-server.listen(9898); // On écoute sur le port 9898
+//server.listen(9898); // On écoute sur le port 9898
 
 const users = new Map(); //simule une base de données
 
-const MONGO_URI = 'mongodb://127.0.0.1/databaseJeuDb';
+const MONGO_URI = 'mongodb://127.0.0.1:27017/DameDataBase';
 
-// Fonction pour initialiser la connexion
+// Connexion MongoDB
 const initDB = async () => {
-    try {
-        await mongoose.connect(MONGO_URI);
-        console.log('Connexion à MongoDB réussie');
-        return true;
-    } catch (error) {
-        console.error('Erreur de connexion à MongoDB', error);
-        return false;
-    }
+  try {
+    await mongoose.connect(MONGO_URI);
+    console.log('Connexion à MongoDB réussie');
+  } catch (error) {
+    console.error('Erreur de connexion à MongoDB :', error);
+    process.exit(1);
+  }
 };
 initDB();
+
+// === Définir les schémas existants ===
+// Collection User
+const UserSchema = new mongoose.Schema({
+  username: String,
+  email: String,
+  password: String, 
+  victory: Number,
+  loss : Number,
+});
+const User = mongoose.model('User', UserSchema, 'User');
+
+// === Serveur Express pour les API REST ===
+//const app = express();
+//app.use(express.json());
+//app.use(cors());
 
 //Création du serveur WebSocket qui utilise le serveur précédent 
 
@@ -49,79 +64,84 @@ const checkPlayersStartGames = () => {
   }
 };
 
-//Mise en place des événements WebSockets
-wsServer.on('request', function(request){
-    const connection = request.accept(null, request.origin);
+wsServer.on('request', (request) => {
+  const connection = request.accept(null, request.origin);
+  console.log('Nouveau client connecté via WebSocket');
 
-    // Ecrire ici le code qui indique ce que l'on fait en cas de
-    // réception de message et en cas de fermeture de la WebSocket
-    connection.on('open', function(message) {
-        console.log('Bienvenue ! Vous êtes connecté');
-        });
-        
-    connection.on('message', function(message) {
-        console.log(message, 'bien reçu');
-        const raw = JSON.stringify(message)
-        const dataraw = JSON.parse(raw);
-        const data = JSON.parse(dataraw.utf8Data);
+  // Gestion des messages WebSocket
+  connection.on('message', async (message) => {
+    const data = JSON.parse(message.utf8Data);
 
-        console.log(data.username);
+    console.log('Données reçues du client :', data);
 
-        //if (data.type === "login") {
-          const { username, password } = data;
-    
-          if (users.has(username)) {
-            // Vérifier le mot de passe pour un utilisateur existant
-            if (users.get(username) === password) {
-              connection.send(
-                JSON.stringify({
-                  type: "login_success",
-                  username,
-                })
-              );
-            } else {
-              connection.send(
-                JSON.stringify({
-                  type: "login_error",
-                  message: "Mot de passe incorrect.",
-                })
-              );
-            }
+    // === Gestion de la connexion ===
+    if (data.type === 'login') {
+      const { username, password } = data;
+
+      try {
+        console.log(`Étape 1 : Vérification de l'utilisateur - username: "${username}"`);
+
+        // Recherche dans MongoDB
+        const user = await User.findOne({ username: username });
+
+        if (user) {
+          console.log('Étape 1 : Utilisateur trouvé :', user);
+          if (password === user.password) {
+            console.log('Étape 2 : Mot de passe correct');
+            connection.sendUTF(JSON.stringify({
+              type: 'login_success',
+              message: 'Connexion réussie',
+              username: user.username,
+            }));
           } else {
-            // Ajouter un nouvel utilisateur
-            users.set(data.username, data.password);
-            connection.send(
-              JSON.stringify({
-                type: "login_success",
-                username,
-              })
-            );
+            console.log('Étape 2 : Mot de passe incorrect');
+            connection.sendUTF(JSON.stringify({
+              type: 'login_error',
+              message: 'Nom d\'utilisateur ou mot de passe incorrect.',
+            }));
           }
-
-        // Ajout du joueur à la liste des joueurs connectés et à la file d'attente
-        const player = {username, connection};
-        connectedPlayers.push(player);
-        waitingPlayers.push(player);
+        } else {
+          console.log('Étape 1 : Aucun utilisateur trouvé avec ce nom d\'utilisateur, création d\'un nouvel utilisateur');
+          try {
+            const newUser = new User({
+              username,
+              email: '', // Remplir ou laisser vide si pas nécessaire pour le moment
+              password, // Idéalement, hachez le mot de passe avant de le sauvegarder
+              victory: 0,
+              loss: 0,
+            });
         
-        // Vérifie si on peut démarrer une ou des partie(s)
-        checkPlayersStartGames();
-      
-        //On informe les joeurs quand ils sont dans la file d'attente
-        if (waitingPlayers.includes(player)) {
-            connection.send(JSON.stringify({ 
-              type: 'waiting',
-              message: 'En attente d\'un adversaire'
-            })
-          );
+            await newUser.save();
+        
+            console.log('Nouvel utilisateur ajouté avec succès :', newUser);
+        
+            connection.sendUTF(JSON.stringify({
+              type: 'login_success',
+              message: 'Nouvel utilisateur créé avec succès et connexion réussie.',
+              username: newUser.username,
+            }));
+          } catch (saveError) {
+            console.error('Erreur lors de l\'ajout du nouvel utilisateur :', saveError);
+            connection.sendUTF(JSON.stringify({
+              type: 'error',
+              message: 'Erreur serveur lors de la création d\'un nouvel utilisateur.',
+            }));
+          }
         }
-        console.log(users);
+        
+    }  catch (error) {
+      console.error('Erreur serveur lors de la vérification de l\'utilisateur :', error);
+      connection.sendUTF(JSON.stringify({
+        type: 'error',
+        message: 'Erreur serveur lors de la connexion.',
+      }));
+    }
+  };
 
-    });
-    connection.on('close', function(reasonCode, description) {
-        console.log('perte de connexion')
-        // code à rajouter
-        });
-});
+  connection.on('close', () => {
+    console.log('Client déconnecté');
+  });
+})});
 
 // Authentification
 wsServer.on("connection", (ws) => {
@@ -131,3 +151,13 @@ wsServer.on("connection", (ws) => {
       console.log("Client disconnected");
     });
 });   
+
+// === Démarrer les serveurs ===
+const PORT = 9898;
+
+(async () => {
+  await initDB();
+  server.listen(PORT, () => {
+    console.log(`Serveur lancé et en écoute sur http://localhost:${PORT}`);
+  });
+})();
