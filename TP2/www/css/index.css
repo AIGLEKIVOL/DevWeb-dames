@@ -131,3 +131,35 @@ h1 {
         background-image:linear-gradient(to bottom, #585858 0%, #1B1B1B 51%);
     }
 }
+
+/* Lorsque l'écran est plus petit on adapte notre css */
+@media screen and (max-width: 400px) {
+    body {
+        font-size: 14px;
+    }
+    
+    .app {
+        width: 90%;
+        height: auto;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px;
+        margin: 0;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    .event {
+        font-size: 14px;
+        margin: 0px 10px;
+    }
+
+    .popup {
+        width: 90%;
+        padding: 15px;
+    }   
+    
+}
