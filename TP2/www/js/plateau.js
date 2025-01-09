@@ -130,7 +130,6 @@ function deplacerPions(pionSelectionne, caseArrivee) {
             // Déplacer le pion
             caseArrivee.appendChild(pionSelectionne);
             console.log("Capture réussie.");
-            console.log(capturePossible(xArrivee,yArrivee, couleurPion))
             // Vérifier s'il y a une capture  possible
             if (capturePossible(xArrivee,yArrivee, couleurPion)) {
                 // Si des captures successives sont possibles, continuer avec ce pion
