@@ -135,7 +135,22 @@ wsServer.on('request', (request) => {
       }));
     }
   };
+// Ajout du joueur à la liste des joueurs connectés et à la file d'attente
+const player = {username, connection};
+connectedPlayers.push(player);
+waitingPlayers.push(player);
 
+// Vérifie si on peut démarrer une ou des partie(s)
+checkPlayersStartGames();
+
+//On informe les joeurs quand ils sont dans la file d'attente
+if (waitingPlayers.includes(player)) {
+    connection.send(JSON.stringify({ 
+      type: 'waiting',
+      message: 'En attente d\'un adversaire'
+    })
+  );
+}
   connection.on('close', () => {
     console.log('Client déconnecté');
   });
