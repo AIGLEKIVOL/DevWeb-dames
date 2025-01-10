@@ -6,17 +6,15 @@ Après avoir créer votre environnement conda et avoir installer cordova, il fau
 - faire conda activate NomEnvConda (votre nom d'env pour le projet)
 - faire .\LaunchCordova.bat 
 
-
-2. un autre terminal en même temps (se placer dans dossier Serveur du projet ) :
-- conda activate DevWeb
-- node ServerWS.js
-
-3. dans un autre terminal (se placer dans dossier TP2 du projet): 
-- conda activate NomEnvConda
-- cordova run browser 
-
-
-4. Restauration de la base de données
+2. Restauration de la base de données
 Vérifiez que MongoDB est bien installé et en cours d'exécution
  Exécutez la commande suivante pour effectuer la restauration :
  mongorestore --db DameDataBase ./backup/DameDataBase
+
+3. un autre terminal en même temps (se placer dans dossier Serveur du projet ) :
+- conda activate DevWeb
+- node ServerWS.js
+
+4. dans un autre terminal (se placer dans dossier TP2 du projet): 
+- conda activate NomEnvConda
+- cordova run browser 
