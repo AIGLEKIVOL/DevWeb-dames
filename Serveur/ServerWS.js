@@ -75,11 +75,10 @@ const checkPlayersStartGames = () => {
   while (waitingPlayers.length >= 2) {
       const player1 = waitingPlayers.shift();
       const player2 = waitingPlayers.shift();
-      console.log(player1)
-      console.log(player2)
-      console.log(player1.connection)
-      console.log(player2.connection)
 
+      console.log("Type de player1:", typeof player1);
+      console.log("Type de player2:", typeof player2);
+      
       if (!player1 || !player2.connection) {
           console.error('Erreur : joueurs invalides pour démarrer une partie.');
           return;
@@ -94,18 +93,21 @@ wsServer.on('request', (request) => {
   console.log('Nouveau client connecté via WebSocket');
   waitingPlayers.push(connection);
   console.log(waitingPlayers.length);
+  //console.log(waitingPlayers);
+
   if (waitingPlayers.length >= 3) {
-    const player1 = waitingPlayers.shift();
-    const player2 = waitingPlayers.shift();
+    const player1 = { connection: waitingPlayers.shift() };
+    const player2 = { connection: waitingPlayers.shift() };
     
     const gameId = Math.random().toString(36).substring(2, 9);
     games[gameId] = { player1, player2, board: initialiserPlateau() };
     console.log("Type de player1:", typeof player1);
     console.log("Type de player2:", typeof player2);
-    
+    //console.log("player1:", player1);
+    //console.log("player2:", player2);
 
-    player1.sendUTF(JSON.stringify({ type: 'start', gameId, player: 'X' }));
-    player2.sendUTF(JSON.stringify({ type: 'start', gameId, player: 'O' }));
+    player1.connection.sendUTF(JSON.stringify({ type: 'start', gameId, player: 'X' }));
+    player2.connection.sendUTF(JSON.stringify({ type: 'start', gameId, player: 'O' }));
     console.log(`Partie démarrée avec l'ID ${gameId}`);
 
   }
@@ -185,7 +187,7 @@ wsServer.on('request', (request) => {
     if (data.type === 'join_game') {
       waitingPlayers.push({ username: data.username, connection });
       checkPlayersStartGames();
-      console.log(waitingPlayers);
+      //console.log(waitingPlayers);
       return;
     }
 

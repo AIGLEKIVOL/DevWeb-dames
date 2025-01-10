@@ -1,6 +1,7 @@
-import {deplacerPions, capturePossible, afficherPlateau} from './plateau.js';
+import { initialiserPlateau, deplacerPions, capturePossible, afficherPlateauBase} from './plateau.js';
 
-afficherPlateau();  // Appel de la fonction pour afficher le plateau
+console.log("Le script game.js est bien chargé !");
+afficherPlateauBase();  // Appel de la fonction pour afficher le plateau
 let joueurActif = "white";  // Les blancs commencent
 let pionSelectionne = null;
 

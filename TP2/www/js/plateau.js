@@ -35,9 +35,9 @@ function initializeBoard() {
 export function initialiserPlateau() {
     // Fonction pour initialiser un plateau de 10x10 avec alternance des couleurs
     const plateau = [];
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < 10; i++) {
         const ligne = [];
-        for (let j = 0; j < 11; j++) {
+        for (let j = 0; j < 10; j++) {
             // Case noire sur les cases impaires et blanches sur les paires
             if ((i + j) % 2 === 0) {
                 ligne.push("blanc");
@@ -50,7 +50,7 @@ export function initialiserPlateau() {
     return plateau;
 }
 
-export function afficherPlateau() {
+export function afficherPlateauBase() {
     const plateau = initialiserPlateau();  // Initialisation du plateau
     const tableauHTML = document.getElementById("plateau");  // Trouver l'élément HTML où afficher le plateau
 
@@ -96,6 +96,8 @@ export function afficherPlateau() {
         tableauHTML.appendChild(ligneHTML);  // Ajouter la ligne au plateau
     });
 }
+
+//afficherPlateauBase();
 
 export function ajouterPionSVG(caseSVG, couleur) {
     const pion = document.createElementNS("http://www.w3.org/2000/svg", "circle");  // Créer un cercle pour le pion
