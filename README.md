@@ -5,8 +5,8 @@ Après avoir créer votre environnement conda et avoir fait les installations n�
 - se placer dans le répertoire suivant : DevWeb-dames
 - faire conda activate NomEnvConda (votre nom d'env pour le projet)
 - lancer cordova :
-    [version windows] .\LaunchCordova.bat
-    [version linux] ./LaunchCordova.sh
+-     [version windows] .\LaunchCordova.bat
+-       [version linux] ./LaunchCordova.sh
 
 2. Restauration de la base de données
 Vérifiez que MongoDB est bien installé et en cours d'exécution
