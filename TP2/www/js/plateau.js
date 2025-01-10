@@ -1,9 +1,43 @@
-function initialiserPlateau() {
-    // Fonction pour initialiser un plateau de 8x8 avec alternance des couleurs
+const board = []; // Représentation interne du plateau
+const currentGameId = 1;
+const ws = new WebSocket('ws://127.0.0.1:9898/');
+
+initializeBoard();
+
+// Fonction pour initialiser le plateau
+function initializeBoard() {
+    // Parcourir chaque ligne et chaque colonne du plateau
+    for (let i = 0; i < 11; i++) {
+        const row = [];
+        for (let j = 0; j < 11; j++) {
+            if ((i + j) % 2 === 0) {
+                // Cases blanches
+                row.push(null);
+            } else {
+                // Cases noires
+                if (i < 5) {
+                    row.push('black'); // Pions noirs dans les 3 premières lignes
+                } else if (i > 6) {
+                    row.push('white'); // Pions blancs dans les 3 dernières lignes
+                } else {
+                    row.push(null); // Cases noires vides au milieu
+                }
+            }
+        }
+        board.push(row);
+    }
+    console.log("Plateau initialisé :");
+    //console.table(board); // Affiche le plateau dans la console pour vérification
+}
+
+
+
+export function initialiserPlateau() {
+    // Fonction pour initialiser un plateau de 10x10 avec alternance des couleurs
     const plateau = [];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 11; i++) {
         const ligne = [];
-        for (let j = 0; j < 10; j++) {
+        for (let j = 0; j < 11; j++) {
             // Case noire sur les cases impaires et blanches sur les paires
             if ((i + j) % 2 === 0) {
                 ligne.push("blanc");
@@ -16,26 +50,26 @@ function initialiserPlateau() {
     return plateau;
 }
 
-function afficherPlateau() {
+export function afficherPlateau() {
     const plateau = initialiserPlateau();  // Initialisation du plateau
     const tableauHTML = document.getElementById("plateau");  // Trouver l'élément HTML où afficher le plateau
-    
-    y = 1;
+
     plateau.forEach((ligne,i) => {
         const ligneHTML = document.createElement("div");  // Créer une ligne
         ligneHTML.style.display = "flex";  // Les cases seront alignées horizontalement
-        x = 1;
+
         ligne.forEach((caseType,j) => {
             const caseSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg");  // Créer une case en SVG
             caseSVG.setAttribute("width", "50");
             caseSVG.setAttribute("height", "50");
-            
 
             const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
             rect.setAttribute("width", "50");
             rect.setAttribute("height", "50");
-            rect.setAttribute("data-x",x);
-            rect.setAttribute("data-y",y);
+
+            // Ajout des attributs de position
+            rect.setAttribute("data-x", j); // Coordonnée X
+            rect.setAttribute("data-y", i); // Coordonnée Y
 
             // Remplir les cases en fonction de leur couleur
             if (caseType === "noir") {
@@ -55,15 +89,15 @@ function afficherPlateau() {
                     ajouterPionSVG(caseSVG, "white");  // Pions blancs sur les 3 dernières lignes
                 }
             }
-            x++;
+
             ligneHTML.appendChild(caseSVG);  // Ajouter la case à la ligne
         });
-        y++;
+
         tableauHTML.appendChild(ligneHTML);  // Ajouter la ligne au plateau
     });
 }
 
-function ajouterPionSVG(caseSVG, couleur) {
+export function ajouterPionSVG(caseSVG, couleur) {
     const pion = document.createElementNS("http://www.w3.org/2000/svg", "circle");  // Créer un cercle pour le pion
     pion.setAttribute("cx", "25");  // Coordonnée X (centre)
     pion.setAttribute("cy", "25");  // Coordonnée Y (centre)
@@ -76,8 +110,36 @@ function ajouterPionSVG(caseSVG, couleur) {
 
     caseSVG.appendChild(pion);  // Ajouter le pion à la case
 }
+
+
+
+// Fonction pour mettre à jour le plateau en fonction d'un mouvement
+// Fonction pour déplacer une pièce sur le plateau
+function applyMove(from, to) {
+    const [fromRow, fromCol] = from;
+    const [toRow, toCol] = to;
+
+    if (!isValidMove(from, to)) {
+        console.error("Mouvement invalide !");
+        return false;
+    }
+
+    // Déplacer la pièce
+    const piece = board[fromRow][fromCol];
+    board[fromRow][fromCol] = null;
+    board[toRow][toCol] = piece;
+}
+
+
+function updateBoardUI(from, to, piece) {
+    const fromElement = document.querySelector(`[data-position="${from}"]`);
+    const toElement = document.querySelector(`[data-position="${to}"]`);
+    if (fromElement) fromElement.textContent = ''; // Effacer la pièce
+    if (toElement) toElement.textContent = piece;  // Ajouter la pièce
+}
+
 // Fonction pour gérer les déplacements des pions
-function deplacerPions(pionSelectionne, caseArrivee) {
+export function deplacerPions(pionSelectionne, caseArrivee) {
     const xDepart = parseInt(pionSelectionne.parentNode.querySelector("rect").getAttribute("data-x"));
     const yDepart = parseInt(pionSelectionne.parentNode.querySelector("rect").getAttribute("data-y"));
     const rectArrivee = caseArrivee.querySelector("rect");
@@ -96,22 +158,37 @@ function deplacerPions(pionSelectionne, caseArrivee) {
     const deltaY = yArrivee - yDepart;
     const couleurPion = pionSelectionne.getAttribute("fill");
 
-    // Vérifier le sens du mouvement (les blancs montent, les noirs descendent)
-    if ((couleurPion === "white" && deltaY >= 0) || (couleurPion === "black" && deltaY <= 0)) {
-        console.error("Vous ne pouvez déplacer un pion que vers l'avant.");
-        return false;
-    }
-
     // Déplacement simple (1 case)
     if (Math.abs(deltaX) === 1) {
-        // Déplacer le pion
-        caseArrivee.appendChild(pionSelectionne);
-        console.log("Déplacement réussi.");
-        return true;
+    // Vérifier le sens du mouvement (les blancs montent, les noirs descendent)
+        if ((couleurPion === "white" && deltaY >= 0) || (couleurPion === "black" && deltaY <= 0)) {
+            console.error("Vous ne pouvez déplacer un pion que vers l'avant.");
+            return false;
+        }
+            // Déplacer le pion
+            caseArrivee.appendChild(pionSelectionne);
+            console.log("Déplacement réussi.");
+            applyMove()
+             // Envoyer le mouvement au serveur
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'move',
+                    move: {
+                        from: { x: xDepart, y: yDepart },
+                        to: { x: xArrivee, y: yArrivee }
+                    },
+                    playerColor: couleurPion, // Optionnel : ajouter la couleur du joueur
+                    gameId: currentGameId // ID de la partie actuelle
+                }));
+            } else {
+                console.error("Connexion WebSocket fermée.");
+            }
+            return true;
     }
+    
 
     // Déplacement avec capture (2 cases)
-    if (Math.abs(deltaX) === 2) {
+    if (Math.abs(deltaX) === 2 && Math.abs(deltaY) === 2) {
         const xCapture = xDepart + deltaX / 2;
         const yCapture = yDepart + deltaY / 2;
 
@@ -126,48 +203,87 @@ function deplacerPions(pionSelectionne, caseArrivee) {
             // Déplacer le pion
             caseArrivee.appendChild(pionSelectionne);
             console.log("Capture réussie.");
+            // Envoyer le mouvement avec capture au serveur
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'move',
+                    move: {
+                        from: { x: xDepart, y: yDepart },
+                        to: { x: xArrivee, y: yArrivee },
+                        capture: { x: xCapture, y: yCapture } // Coordonnées du pion capturé
+                    },
+                    playerColor: couleurPion,
+                    gameId: currentGameId
+                }));
+            } else {
+                console.error("Connexion WebSocket fermée.");
+            }
+
+            // Vérifier s'il y a une capture  possible
+            if (capturePossible(xArrivee,yArrivee, couleurPion)) {
+                // Si des captures successives sont possibles, continuer avec ce pion
+                //console.log("Vous pouvez continuer à capturer !");
+                joueurActif = joueurActif === "white" ? "black" : "white";
+                return true;  // Retourne vrai pour permettre une capture successive
+            }
+
+            // Si aucune capture successive, c'est au tour de l'autre joueur
             return true;
         } else {
             console.error("Aucun pion ennemi à capturer.");
             return false;
         }
     }
+
     console.error("Déplacement invalide.");
     return false;
 }
 
-let joueurActif = "white";  // Les blancs commencent
-let pionSelectionne = null;
+// Vérification si capture possible 
+export function capturePossible(xDepart, yDepart, couleurPion) {
+    const directions = [
+        { x: 2, y: 2 }, { x: -2, y: 2 },
+        { x: 2, y: -2 }, { x: -2, y: -2 }
+    ];
 
-document.getElementById("plateau").addEventListener("click", (event) => {
-    const cible = event.target;
-
-    if (cible.tagName === "circle") {
-        const couleurPion = cible.getAttribute("fill");
-
-        // Vérifier si c'est bien le tour du joueur
-        if (couleurPion !== joueurActif) {
-            console.error(`Ce n'est pas le tour des ${couleurPion}.`);
-            return;
+    for (const direction of directions) {
+        const xArrivee = xDepart + direction.x;
+        const yArrivee = yDepart + direction.y;
+        
+        const caseArrivee = document.querySelector(
+            `rect[data-x="${xArrivee}"][data-y="${yArrivee}"]`
+        )?.parentNode;
+        //console.log(caseArrivee?.querySelector("circle"));
+        //si la case d'arrivée contient un pion
+        if(caseArrivee?.querySelector("circle")!==null){
+           
         }
-        pionSelectionne = cible;
-        console.log(`Pion ${couleurPion} sélectionné.`);
-    } else if (cible.tagName === "rect" && pionSelectionne) {
-        const caseArrivee = cible.parentNode;
+        else{
+            const rectArrivee = document.querySelector(
+                `rect[data-x="${xArrivee}"][data-y="${yArrivee}"]`
+            )
+            // Vérifie que la case d'arrivée est vide (couleur "brown")
+            if (rectArrivee.getAttribute("fill") === "brown") {
+                const xCapture = xDepart + (direction.x / 2);
+                const yCapture = yDepart + (direction.y / 2);
 
-        // Essayer de déplacer le pion
-        const deplacementValide = deplacerPions(pionSelectionne, caseArrivee);
+                const caseCapture = document.querySelector(
+                    `rect[data-x="${xCapture}"][data-y="${yCapture}"]`
+                )?.parentNode; // Vérifie si une case intermédiaire existe
+                const pionCapture = caseCapture?.querySelector("circle");
 
-        if (deplacementValide) {
-            // Si le déplacement est valide, alterner le joueur actif
-            joueurActif = joueurActif === "white" ? "black" : "white";
-            console.log(`C'est au tour des ${joueurActif}.`);
-        } else {
-            // Si le déplacement est invalide, le joueur reste actif et peut réessayer
-            console.log(`Le joueur ${joueurActif} doit réessayer.`);
+                // Vérifie qu'il y a un pion à capturer et que ce pion n'est pas de la même couleur
+                if (pionCapture && (pionCapture.getAttribute("fill") !== couleurPion)) {
+                    return true; // Capture possible
+                }
+            }
         }
-        pionSelectionne = null;
     }
-});
 
-afficherPlateau();  // Appel de la fonction pour afficher le plateau
+    return false; // Aucune capture possible
+}
+
+
+
+
+
