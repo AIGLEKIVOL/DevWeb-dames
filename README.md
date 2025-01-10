@@ -1,6 +1,6 @@
 # DevWeb-dames
 
-Comment lancer tout le projet : 
+Comment lancer le projet : 
 1. se placer dans cmd (pas en mode admin)
 se placer dans le répertoire suivant : DevWeb-dames et faire conda activate DevWeb (ou votre nom d'env pour le projet)
 faire .\LaunchCordova.bat 
