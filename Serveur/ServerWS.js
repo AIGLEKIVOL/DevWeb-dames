@@ -36,7 +36,6 @@ const User = mongoose.model('User', UserSchema, 'User');
 //app.use(cors());
 
 //Création du serveur WebSocket qui utilise le serveur précédent 
-
 const wsServer = new WebSocketServer({
     httpServer: server
 });
@@ -45,13 +44,22 @@ const wsServer = new WebSocketServer({
 const connectedPlayers = [];
 const waitingPlayers = [];
 
-  // // Fonction pour démarrer une partie
-  // const startGame = (player1, player2) => {
-  //   console.log(`Starting game between ${player1.username} and ${player2.username}`);
-  //   player1.connection.send(JSON.stringify({ type: 'game_start', opponent: player2.username }));
-  //   player2.connection.send(JSON.stringify({ type: 'game_start', opponent: player1.username }));
-  //   // Logique de démarrage du jeu ici
-  // };
+// Gestion des salles de jeu
+let rooms = {};
+
+// Fonction pour démarrer une partie
+const startGame = (player1, player2) => {
+  const roomId = `salle-${Date.now()}`;
+  rooms[roomId] = {
+      players: [player1, player2],
+      currentPlayer: player1
+  };
+
+  console.log(`Starting game between ${player1.username} and ${player2.username} in room ${roomId}`);
+  player1.connection.send(JSON.stringify({ type: 'game_start', opponent: player2.username, roomId }));
+  player2.connection.send(JSON.stringify({ type: 'game_start', opponent: player1.username, roomId }));
+  // Logique de démarrage du jeu ici
+};
 
 // On vérifie qu'il y a bien 2 joueurs au moins en file d'attente avant de démarrer les parties
 const checkPlayersStartGames = () => {
@@ -70,11 +78,12 @@ wsServer.on('request', (request) => {
   connection.on('message', async (message) => {
     const data = JSON.parse(message.utf8Data);
 
-    console.log('Données reçues du client :', data);
+    console.log('Données reçues du client :', data); //test
+    // const { username, password } = data; //test
 
     // === Gestion de la connexion ===
     if (data.type === 'login') {
-      const { username, password } = data;
+      const { username, password } = data; //commenttest
 
       try {
         console.log(`Étape 1 : Vérification de l'utilisateur - username: "${username}"`);
@@ -91,6 +100,23 @@ wsServer.on('request', (request) => {
               message: 'Connexion réussie',
               username: user.username,
             }));
+            
+            // Ajout du joueur à la liste des joueurs connectés et à la file d'attente
+            const player = {username, connection};
+            connectedPlayers.push(player);
+            waitingPlayers.push(player);
+
+            // Vérifie si on peut démarrer une ou des partie(s)
+            checkPlayersStartGames();
+
+            //On informe les joeurs quand ils sont dans la file d'attente
+            if (waitingPlayers.includes(player)) {
+                connection.send(JSON.stringify({ 
+                  type: 'waiting',
+                  message: 'En attente d\'un adversaire'
+                })
+              );
+            }
           } else {
             console.log('Étape 2 : Mot de passe incorrect');
             connection.sendUTF(JSON.stringify({
@@ -118,6 +144,23 @@ wsServer.on('request', (request) => {
               message: 'Nouvel utilisateur créé avec succès et connexion réussie.',
               username: newUser.username,
             }));
+
+            // Ajout du joueur à la liste des joueurs connectés et à la file d'attente
+            const player = {username, connection};
+            connectedPlayers.push(player);
+            waitingPlayers.push(player);
+
+            // Vérifie si on peut démarrer une ou des partie(s)
+            checkPlayersStartGames();
+
+            //On informe les joeurs quand ils sont dans la file d'attente
+            if (waitingPlayers.includes(player)) {
+                connection.send(JSON.stringify({ 
+                  type: 'waiting',
+                  message: 'En attente d\'un adversaire'
+                })
+              );
+            }
           } catch (saveError) {
             console.error('Erreur lors de l\'ajout du nouvel utilisateur :', saveError);
             connection.sendUTF(JSON.stringify({
@@ -135,24 +178,22 @@ wsServer.on('request', (request) => {
       }));
     }
   };
-// Ajout du joueur à la liste des joueurs connectés et à la file d'attente
-const player = {username, connection};
-connectedPlayers.push(player);
-waitingPlayers.push(player);
 
-// Vérifie si on peut démarrer une ou des partie(s)
-checkPlayersStartGames();
-
-//On informe les joeurs quand ils sont dans la file d'attente
-if (waitingPlayers.includes(player)) {
-    connection.send(JSON.stringify({ 
-      type: 'waiting',
-      message: 'En attente d\'un adversaire'
-    })
-  );
-}
   connection.on('close', () => {
     console.log('Client déconnecté');
+    // Supprime le joueur de la liste des joueurs connectés et de la file d'attente
+    const playerIndex = connectedPlayers.findIndex((player) => player.connection === connection);
+    if (playerIndex !== -1) {
+      connectedPlayers.splice(playerIndex, 1);
+    }
+    const waitingPlayerIndex = waitingPlayers.findIndex((player) => player.connection === connection);
+    if (waitingPlayerIndex !== -1) {
+      waitingPlayers.splice(waitingPlayerIndex, 1);
+    }
+
+    // Vérifie si on peut démarrer une ou des partie(s) avec les joueurs restants après la mise à jour des joueurs connectés et en attente
+    checkPlayersStartGames();
+  
   });
 })});
 
